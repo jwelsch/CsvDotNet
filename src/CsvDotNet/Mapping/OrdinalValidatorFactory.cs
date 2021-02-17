@@ -1,4 +1,6 @@
-﻿namespace CsvDotNet.Mapping
+﻿using System;
+
+namespace CsvDotNet.Mapping
 {
     public interface IOrdinalValidatorFactory
     {
@@ -9,14 +11,19 @@
     {
         public IOrdinalValidator Create(int count)
         {
-            var trackers = new OrdinalTracker[count];
-
-            for (var i = 0; i < trackers.Length; i++)
+            if (count < 0)
             {
-                trackers[i] = new OrdinalTracker(i);
+                throw new ArgumentException(nameof(count));
             }
 
-            return new OrdinalValidator(trackers);
+            var ordinals = new int[count];
+
+            for (var i = 0; i < ordinals.Length; i++)
+            {
+                ordinals[i] = i;
+            }
+
+            return new OrdinalValidator(ordinals);
         }
     }
 }
