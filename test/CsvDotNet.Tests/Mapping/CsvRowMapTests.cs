@@ -5,6 +5,7 @@ using DotNetReflector;
 using FluentAssertions;
 using NSubstitute;
 using System;
+using System.Linq;
 using Xunit;
 
 namespace CsvDotNet.Tests.Mapping
@@ -219,6 +220,24 @@ namespace CsvDotNet.Tests.Mapping
             Action specimen = () => map.Map(csvRow);
 
             specimen.Should().Throw<InvalidCastException>();
+        }
+
+        [Fact]
+        public void When_ctor_maps_are_set_then_columncount_returns_correct_number_of_columns()
+        {
+            var typeFactory = Substitute.For<ITypeFactory>();
+            var typeDeserializer = Substitute.For<ITypeDeserializer>();
+            var propertyReflector = Substitute.For<IPropertyReflector>();
+            var maps = new ICsvColumnMap[]
+            {
+                new CsvColumnMap(0, propertyReflector),
+                new CsvColumnMap(1, propertyReflector),
+                new CsvColumnMap(2, propertyReflector)
+            };
+
+            var rowMap = new CsvRowMap<NamedSampleRow>(typeFactory, typeDeserializer, maps);
+
+            rowMap.ColumnCount.Should().Be(maps.Length);
         }
     }
 }

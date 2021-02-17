@@ -49,6 +49,11 @@ namespace CsvDotNet.Mapping
                     return null;
                 }
 
+                if (csvColumns.Length != csvRow.Length)
+                {
+                    throw new CsvException($"The type '{type.FullName}' is decorated with {csvColumns.Length} CSV named column attributes, but {csvRow.Length} headers were found in the CSV data.");
+                }
+
                 foreach (var csvColumn in csvColumns)
                 {
                     for (var i = 0; i < csvRow.Length; i++)
@@ -91,7 +96,7 @@ namespace CsvDotNet.Mapping
                 }
             }
 
-            return new CsvRowMap<T>(_typeFactory, _deserializer, maps);
+            return new CsvRowMap<T>(_typeFactory, _deserializer, maps.ToArray());
         }
 
         private static bool IsNamedCsvColumns(ITypeReflector typeReflector)

@@ -38,6 +38,11 @@ namespace CsvDotNet
                     continue;
                 }
 
+                if (csvRow.Length != rowMap.ColumnCount)
+                {
+                    throw new CsvException($"Expected {rowMap.ColumnCount} CSV data columns, but found {csvRow.Length}.");
+                }
+
                 var rowObj = rowMap.Map(csvRow);
 
                 result.Add(rowObj);

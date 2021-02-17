@@ -1,11 +1,12 @@
 ﻿using DotNetReflector;
 using System;
-using System.Collections.Generic;
 
 namespace CsvDotNet.Mapping
 {
     public interface ICsvRowMap<T>
     {
+        int ColumnCount { get; }
+
         T Map(string[] csvRow);
     }
 
@@ -13,9 +14,11 @@ namespace CsvDotNet.Mapping
     {
         private readonly ITypeFactory _typeFactory;
         private readonly ITypeDeserializer _deserializer;
-        private readonly IEnumerable<ICsvColumnMap> _maps;
+        private readonly ICsvColumnMap[] _maps;
 
-        public CsvRowMap(ITypeFactory typeFactory, ITypeDeserializer deserializer, IEnumerable<ICsvColumnMap> maps)
+        public int ColumnCount => _maps.Length;
+
+        public CsvRowMap(ITypeFactory typeFactory, ITypeDeserializer deserializer, ICsvColumnMap[] maps)
         {
             _typeFactory = typeFactory;
             _deserializer = deserializer;

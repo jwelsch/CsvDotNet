@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DotNetReflector;
+using System;
 using System.ComponentModel;
 
 namespace CsvDotNet.Mapping
@@ -12,6 +13,13 @@ namespace CsvDotNet.Mapping
 
     public class TypeDeserializer : ITypeDeserializer
     {
+        private readonly ITypeFactory _typeFactory;
+
+        public TypeDeserializer(ITypeFactory typeFactory)
+        {
+            _typeFactory = typeFactory;
+        }
+
         public T Deserialize<T>(string value)
         {
             return (T)Deserialize(typeof(T), value);
@@ -24,15 +32,24 @@ namespace CsvDotNet.Mapping
                 return null;
             }
 
-            if (value.GetType() == targetType.GetType())
+            if (value.GetType() == targetType)
             {
                 return value;
             }
 
-            //return (T)Convert.ChangeType(value, typeof(T));
+            if (value.Length == 0)
+            {
+                return _typeFactory.Create(targetType);
+            }
 
             var converter = TypeDescriptor.GetConverter(targetType);
-            return converter.ConvertFromString(value);
+
+            if (converter.IsValid(value))
+            {
+                return converter.ConvertFromString(value);
+            }
+
+            throw new CsvException($"Cannot deserialize value '{value}' to type '{targetType.FullName}'.");
         }
     }
 }

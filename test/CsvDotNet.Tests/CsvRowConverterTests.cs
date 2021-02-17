@@ -28,7 +28,7 @@ namespace CsvDotNet.Tests
         [Fact]
         public void When_csv_data_is_named_and_has_only_header_row_then_return_empty_array()
         {
-            var row = new NamedSampleRow()
+            var row = new NamedSampleRow
             {
                 Id = 1,
                 Name = "Foo",
@@ -56,7 +56,7 @@ namespace CsvDotNet.Tests
         [Fact]
         public void When_csv_data_is_named_and_has_header_row_and_one_data_row_then_return_array_with_one_element()
         {
-            var row = new NamedSampleRow()
+            var row = new NamedSampleRow
             {
                 Id = 1,
                 Name = "Foo",
@@ -68,6 +68,7 @@ namespace CsvDotNet.Tests
 
             var rowMap = Substitute.For<ICsvRowMap<NamedSampleRow>>();
             rowMap.Map(Arg.Any<string[]>()).Returns(row);
+            rowMap.ColumnCount.Returns(3);
 
             var rowMapFactory = Substitute.For<ICsvRowMapFactory>();
             rowMapFactory.Create<NamedSampleRow>(Arg.Any<ICsvRowParser>()).Returns(rowMap);
@@ -85,14 +86,14 @@ namespace CsvDotNet.Tests
         [Fact]
         public void When_csv_data_is_named_and_has_header_row_and_multiple_data_rows_then_return_array_with_multiple_elements()
         {
-            var row0 = new NamedSampleRow()
+            var row0 = new NamedSampleRow
             {
                 Id = 1,
                 Name = "Foo",
                 Timestamp = DateTime.Parse("2021-02-15")
             };
 
-            var row1 = new NamedSampleRow()
+            var row1 = new NamedSampleRow
             {
                 Id = 2,
                 Name = "Bar",
@@ -104,6 +105,7 @@ namespace CsvDotNet.Tests
 
             var rowMap = Substitute.For<ICsvRowMap<NamedSampleRow>>();
             rowMap.Map(Arg.Any<string[]>()).Returns(row0, row1);
+            rowMap.ColumnCount.Returns(3);
 
             var rowMapFactory = Substitute.For<ICsvRowMapFactory>();
             rowMapFactory.Create<NamedSampleRow>(Arg.Any<ICsvRowParser>()).Returns(rowMap);
