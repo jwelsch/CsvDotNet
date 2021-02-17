@@ -100,11 +100,11 @@ namespace CsvDotNet.Mapping
 
             foreach (var attribute in attributes)
             {
-                if (attribute.Equals(_namedCsvRowAttributeType))
+                if (attribute.Type.Equals(_namedCsvRowAttributeType))
                 {
                     return true;
                 }
-                else if (attribute.Equals(_orderedCsvRowAttributeType))
+                else if (attribute.Type.Equals(_orderedCsvRowAttributeType))
                 {
                     return false;
                 }
