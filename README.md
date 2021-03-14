@@ -1,2 +1,3 @@
 # CsvDotNet
-Declarative-based CSV reading
+
+Library that supports declarative-based CSV reading.
