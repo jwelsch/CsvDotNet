@@ -11,7 +11,7 @@ namespace CsvDotNet
         string[] GetNextRow();
     }
 
-    public enum EolType
+    public enum LineBreakType
     {
         Unknown,
         LineFeed,
@@ -21,8 +21,14 @@ namespace CsvDotNet
 
     public class CsvRowParser : ICsvRowParser
     {
+        private const int EndOfLine = -1;
+        private const int CarriageReturn = '\r';
+        private const int NewLine = '\n';
+        private const int Escape = '\\';
+        private const int ColumnDelimiter = ',';
+
         private ICsvDataProvider _dataProvider;
-        private EolType _eolType = EolType.Unknown;
+        private LineBreakType _lineBreakType = LineBreakType.Unknown;
 
         public void Initialize(ICsvDataProvider dataProvider)
         {
@@ -38,31 +44,66 @@ namespace CsvDotNet
 
             var row = new List<string>();
             var column = new StringBuilder();
+            var escaped = false;
             var loop = true;
 
             while (loop)
             {
                 var c = _dataProvider.Next();
 
-                if (c == -1)
+                if (c == EndOfLine)
                 {
+                    if (escaped)
+                    {
+                        throw new CsvException($"Incomplete escape sequence detected at end of file.");
+                    }
+
                     AddColumnToRow(row, column, true);
+
                     loop = false;
                 }
-                else if (c == '\r' || c == '\n')
+                else if (c == CarriageReturn || c == NewLine)
                 {
+                    if (escaped)
+                    {
+                        throw new CsvException($"Incomplete escape sequence detected at end of line.");
+                    }
+
                     AddColumnToRow(row, column, false);
 
-                    _eolType = HandleEol(c, _dataProvider, _eolType);
+                    _lineBreakType = HandleLineBreak(c, _dataProvider, _lineBreakType);
 
                     loop = false;
                 }
-                else if (c == ',')
+                else if (c == Escape)
                 {
+                    if (escaped)
+                    {
+                        column.Append((char)c);
+                        escaped = false;
+                        continue;
+                    }
+
+                    escaped = true;
+                }
+                else if (c == ColumnDelimiter)
+                {
+                    if (escaped)
+                    {
+                        column.Append((char)c);
+                        escaped = false;
+                        continue;
+                    }
+
                     AddColumnToRow(row, column, false);
                 }
                 else
                 {
+                    if (escaped)
+                    {
+                        throw new CsvException($"Unknown escape sequence '\\{(char)c}'");
+                    }
+
                     column.Append((char)c);
                 }
             }
@@ -80,30 +121,30 @@ namespace CsvDotNet
             }
         }
 
-        private static EolType HandleEol(int trigger, ICsvDataProvider dataProvider, EolType eolType)
+        private static LineBreakType HandleLineBreak(int trigger, ICsvDataProvider dataProvider, LineBreakType lineBreakType)
         {
-            if (eolType == EolType.Unknown)
+            if (lineBreakType == LineBreakType.Unknown)
             {
-                if (trigger == '\r')
+                if (trigger == CarriageReturn)
                 {
-                    if (dataProvider.Peek() == '\n')
+                    if (dataProvider.Peek() == NewLine)
                     {
                         dataProvider.Next();
 
-                        return EolType.CarriageReturnLineFeed;
+                        return LineBreakType.CarriageReturnLineFeed;
                     }
 
-                    return EolType.CarriageReturn;
+                    return LineBreakType.CarriageReturn;
                 }
 
-                return EolType.LineFeed;
+                return LineBreakType.LineFeed;
             }
-            else if (eolType == EolType.CarriageReturnLineFeed)
+            else if (lineBreakType == LineBreakType.CarriageReturnLineFeed)
             {
                 dataProvider.Next();
             }
 
-            return eolType;
+            return lineBreakType;
         }
     }
 }
