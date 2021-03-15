@@ -1,4 +1,5 @@
-﻿using FluentAssertions;
+﻿using AutoFixture;
+using FluentAssertions;
 using System;
 using System.IO;
 using Xunit;
@@ -7,6 +8,8 @@ namespace CsvDotNet.Tests
 {
     public class CsvRowParserTests
     {
+        private static readonly Fixture AutoFixture = new Fixture();
+
         [Fact]
         public void When_getnextrow_called_before_initialize_then_throws()
         {
@@ -312,6 +315,111 @@ namespace CsvDotNet.Tests
             var specimen2 = parser.GetNextRow();
 
             specimen2.Length.Should().Be(0);
+        }
+
+        [Fact]
+        public void When_row_contains_escaped_comma_then_data_is_parsed()
+        {
+            var value1 = AutoFixture.Create<string>();
+            var subValue2A = AutoFixture.Create<string>();
+            var subValue2B = AutoFixture.Create<string>();
+            var value2 = $"{subValue2A}\\,{subValue2B}";
+            var expectedValue2 = $"{subValue2A},{subValue2B}";
+            var value3 = AutoFixture.Create<string>();
+
+            var reader = new StringReader($"{value1},{value2},{value3}");
+            var provider = new TextReaderCsvDataProvider(reader);
+
+            var parser = new CsvRowParser();
+            parser.Initialize(provider);
+
+            var specimen = parser.GetNextRow();
+
+            specimen.Length.Should().Be(3);
+            specimen[0].Should().Be(value1);
+            specimen[1].Should().Be(expectedValue2);
+            specimen[2].Should().Be(value3);
+        }
+
+        [Fact]
+        public void When_row_contains_escaped_backslash_then_data_is_parsed()
+        {
+            var value1 = AutoFixture.Create<string>();
+            var subValue2A = AutoFixture.Create<string>();
+            var subValue2B = AutoFixture.Create<string>();
+            var value2 = $"{subValue2A}\\\\{subValue2B}";
+            var expectedValue2 = $"{subValue2A}\\{subValue2B}";
+            var value3 = AutoFixture.Create<string>();
+
+            var reader = new StringReader($"{value1},{value2},{value3}");
+            var provider = new TextReaderCsvDataProvider(reader);
+
+            var parser = new CsvRowParser();
+            parser.Initialize(provider);
+
+            var specimen = parser.GetNextRow();
+
+            specimen.Length.Should().Be(3);
+            specimen[0].Should().Be(value1);
+            specimen[1].Should().Be(expectedValue2);
+            specimen[2].Should().Be(value3);
+        }
+
+        [Fact]
+        public void When_row_contains_unknown_escaped_character_then_throw()
+        {
+            var value1 = AutoFixture.Create<string>();
+            var subValue2A = AutoFixture.Create<string>();
+            var subValue2B = AutoFixture.Create<string>();
+            var value2 = $"{subValue2A}\\z{subValue2B}";
+            var value3 = AutoFixture.Create<string>();
+
+            var reader = new StringReader($"{value1},{value2},{value3}");
+            var provider = new TextReaderCsvDataProvider(reader);
+
+            var parser = new CsvRowParser();
+            parser.Initialize(provider);
+
+            Action action = () => parser.GetNextRow();
+
+            action.Should().Throw<CsvException>();
+        }
+
+        [Fact]
+        public void When_row_contains_incomplete_escape_sequence_then_throw()
+        {
+            var value1 = AutoFixture.Create<string>();
+            var value2 = AutoFixture.Create<string>();
+            var value3 = AutoFixture.Create<string>();
+
+            var reader = new StringReader($"{value1},{value2},{value3}\\");
+            var provider = new TextReaderCsvDataProvider(reader);
+
+            var parser = new CsvRowParser();
+            parser.Initialize(provider);
+
+            Action action = () => parser.GetNextRow();
+
+            action.Should().Throw<CsvException>();
+        }
+
+        [Fact]
+        public void When_row_contains_extra_escape_character_before_line_break_then_throw()
+        {
+            var value1 = AutoFixture.Create<string>();
+            var value2 = AutoFixture.Create<string>();
+            var value3 = AutoFixture.Create<string>();
+            var value4 = AutoFixture.Create<string>();
+
+            var reader = new StringReader($"{value1},{value2}\\\r\n{value3},{value4}");
+            var provider = new TextReaderCsvDataProvider(reader);
+
+            var parser = new CsvRowParser();
+            parser.Initialize(provider);
+
+            Action action = () => parser.GetNextRow();
+
+            action.Should().Throw<CsvException>();
         }
     }
 }
